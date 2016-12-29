@@ -1,0 +1,16 @@
+name: dart_repl
+description: A starting point for Dart libraries or applications.
+version: 0.0.1
+#author: blackhc <email@example.com>
+#homepage: https://www.example.com
+
+environment:
+  sdk: '>=1.0.0 <2.0.0'
+
+dependencies:
+  vm_service_client:
+  analyzer:
+#  lib_name: any
+
+dev_dependencies:
+  test: '>=0.12.0 <0.13.0'
