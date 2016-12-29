@@ -12,12 +12,23 @@ import 'package:dart_repl/src/cell_type.dart';
 import 'package:dart_repl/src/sandbox.dart';
 import 'package:dart_repl/src/scope.dart';
 import 'package:vm_service_client/vm_service_client.dart';
-import 'package:dart_repl/src/sandbox_environment.dart' as sandbox;
+import 'package:dart_repl/src/execution_environment.dart' as sandbox;
 
 Future main(List<String> args) async {
-  //await repl();
-  final client =
-  new VMServiceClient.connect((await Service.getInfo()).serverUri);
+  await repl();
+}
+
+class ExecutionEnvironmentProxy {
+  final libraryMirror =
+      currentMirrorSystem().findLibrary(#execution_environment);
+
+  dynamic get result => libraryMirror.getField(#result__).reflectee;
+  void set result(dynamic value) {
+    libraryMirror.setField(#result__, value);
+  }
+
+  Scope get scope => libraryMirror.getField(#scope__).reflectee;
+  List<Cell> get cells => libraryMirror.getField(#Cell).reflectee;
 }
 
 Future repl() async {
@@ -38,11 +49,12 @@ Future repl() async {
 
   final runnable = await isolate.loadRunnable();
   final sandboxLibrary = await runnable
-      .libraries[Uri.parse('package:dart_repl/src/sandbox_environment.dart')]
+      .libraries[Uri.parse('package:dart_repl/src/execution_environment.dart')]
       .load();
 
+  final executionEnvironmentProxy = new ExecutionEnvironmentProxy();
   // Touch the scope to ensure it exists.
-  sandbox.scope__;
+  executionEnvironmentProxy.scope;
 
   while (true) {
     stdout.write('>>> ');
@@ -52,7 +64,7 @@ Future repl() async {
       break;
     }
     try {
-      sandbox.result__ = null;
+      executionEnvironmentProxy.result = null;
       final scopeField = await sandboxLibrary.fields['scope__'].load();
       if (isExpression(input)) {
         await scopeField.value.evaluate('result__ = $input');
@@ -63,18 +75,22 @@ Future repl() async {
         await scopeField.value.evaluate('$input');
       }
 
-      if (sandbox.result__ is Future) {
+      if (executionEnvironmentProxy.result is Future) {
         print('(Awaiting result...)');
-        sandbox.result__ = await sandbox.result__;
+        executionEnvironmentProxy.result =
+            await executionEnvironmentProxy.result;
       }
-      if (sandbox.result__ is Stream) {
-        sandbox.result__ = (sandbox.result__ as Stream).toList();
+      if (executionEnvironmentProxy.result is Stream) {
+        executionEnvironmentProxy.result =
+            (executionEnvironmentProxy.result as Stream).toList();
       }
-      if (sandbox.result__ != null) {
-        print(sandbox.result__);
+      if (executionEnvironmentProxy.result != null) {
+        print(executionEnvironmentProxy.result);
       }
-      sandbox.cell.add(
-          new Cell(new Scope.clone(sandbox.scope__), input, sandbox.result__));
+      executionEnvironmentProxy.cells.add(new Cell(
+          new Scope.clone(executionEnvironmentProxy.scope),
+          input,
+          executionEnvironmentProxy.result));
     } on VMErrorException catch (errorRef) {
       print(errorRef);
     }

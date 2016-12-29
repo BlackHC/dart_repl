@@ -33,4 +33,6 @@ class Scope {
       throw new UnsupportedError('Neither setter, nor getter, nor method!');
     }
   }
+
+  String toString() => _scope.toString();
 }
