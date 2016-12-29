@@ -8,6 +8,7 @@ class Cell {
 
   Cell(this.scope, this.input, this.output);
 
+  @override
   String toString() =>
       {'scope': scope, 'input': input, 'output': output}.toString();
 }

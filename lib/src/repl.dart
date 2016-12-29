@@ -14,65 +14,74 @@ import 'package:dart_repl/src/scope.dart';
 import 'package:vm_service_client/vm_service_client.dart';
 import 'package:dart_repl/src/cell_environment.dart' as cell_environment;
 
-Scope createDynamicScope() {
-  final libraryMirror = currentMirrorSystem().findLibrary(#dynamic_environment);
-  final scopeClassMirror = libraryMirror.declarations[#Scope] as ClassMirror;
-  final scope = scopeClassMirror.newInstance(new Symbol(''), [], {}).reflectee;
-  return scope;
-}
-
 Future repl() async {
   final client =
       new VMServiceClient.connect((await Service.getInfo()).serverUri);
 
-  final vm = await client.getVM();
+  try {
+    final vm = await client.getVM();
 
-  print(vm.versionString);
-  print('Type `exit()` to quit.');
+    print(vm.versionString);
+    print('Type `exit()` to quit.');
 
-  final runnableIsolate = await getRunnableIsolateSelf(vm);
-  final scopeLibrary = await runnableIsolate.libraries.values
-      .firstWhere((libraryRef) => libraryRef.name == 'scope')
-      .load();
+    final runnableIsolate = await getRunnableIsolateSelf(vm);
+    final scopeLibrary = await runnableIsolate.libraries.values
+        .firstWhere((libraryRef) => libraryRef.name == 'scope')
+        .load();
 
-  currentScope = createDynamicScope();
+    currentScope = createDynamicScope();
 
-  while (true) {
-    stdout.write('>>> ');
+    while (true) {
+      stdout.write('>>> ');
 
-    final input = stdin.readLineSync();
-    if (input == 'exit()') {
-      break;
-    }
-    try {
-      cell_environment.result__ = null;
-      final scopeField = await scopeLibrary.fields['currentScope'].load();
-      if (isExpression(input)) {
-        await scopeField.value.evaluate('result__ = $input');
-      } else if (isStatements(input)) {
-        await scopeField.value.evaluate('() { $input }()');
-      } else {
-        print('Syntax not supported. Trying...');
-        await scopeField.value.evaluate('$input');
+      final input = stdin.readLineSync();
+      if (input == 'exit()') {
+        break;
+      } else if (input.isEmpty) {
+        continue;
       }
 
-      if (cell_environment.result__ is Future) {
-        print('(Awaiting result...)');
-        cell_environment.result__ = (await cell_environment.result__);
+      try {
+        cell_environment.result__ = null;
+        final scopeField = await scopeLibrary.fields['currentScope'].load();
+        if (isExpression(input)) {
+          await scopeField.value.evaluate('result__ = $input');
+        } else if (isStatements(input)) {
+          await scopeField.value.evaluate('() { $input }()');
+        } else {
+          print('Syntax not supported. Trying...');
+          await scopeField.value.evaluate('$input');
+        }
+
+        if (cell_environment.result__ is Future) {
+          print('(Awaiting result...)');
+          cell_environment.result__ = (await cell_environment.result__);
+        }
+        if (cell_environment.result__ is Stream) {
+          cell_environment.result__ =
+              (cell_environment.result__ as Stream).toList();
+        }
+        if (cell_environment.result__ != null) {
+          print(cell_environment.result__);
+        }
+        cell_environment.Cell.add(new Cell(
+            new Scope.clone(currentScope), input, cell_environment.result__));
+      } on VMErrorException catch (errorRef) {
+        print(errorRef);
       }
-      if (cell_environment.result__ is Stream) {
-        cell_environment.result__ =
-            (cell_environment.result__ as Stream).toList();
-      }
-      if (cell_environment.result__ != null) {
-        print(cell_environment.result__);
-      }
-      cell_environment.Cell.add(new Cell(
-          new Scope.clone(currentScope), input, cell_environment.result__));
-    } on VMErrorException catch (errorRef) {
-      print(errorRef);
     }
   }
+  finally {
+    client.close();
+  }
+}
+
+Scope createDynamicScope() {
+  final libraryMirror = currentMirrorSystem().findLibrary(#dynamic_environment);
+  final scopeClassMirror = libraryMirror.declarations[#Scope] as ClassMirror;
+  final scope = scopeClassMirror.newInstance(
+      new Symbol(''), <dynamic>[], <Symbol, dynamic>{}).reflectee as Scope;
+  return scope;
 }
 
 Future<VMRunnableIsolate> getRunnableIsolateSelf(VM vm) async {

@@ -18,6 +18,7 @@ class Scope {
 
   factory Scope.clone(Scope other) => new Scope.predefined(other._scope);
 
+  @override
   dynamic noSuchMethod(Invocation invocation) {
     if (invocation.isGetter) {
       if (_scope.containsKey(invocation.memberName)) {
@@ -29,6 +30,7 @@ class Scope {
       final variable = MirrorSystem.getSymbol(
           MirrorSystem.getName(invocation.memberName).split('=').first);
       _scope[variable] = invocation.positionalArguments.first;
+      return null;
     } else if (invocation.isMethod) {
       return Function.apply(_scope[invocation.memberName] as Function,
           invocation.positionalArguments, invocation.namedArguments);
@@ -37,5 +39,6 @@ class Scope {
     }
   }
 
+  @override
   String toString() => _scope.toString();
 }

@@ -3,8 +3,6 @@
 // This library name is important for the execution code to find it dynamically.
 library dynamic_environment;
 
-import 'dart:collection';
-import 'dart:io';
 import 'dart:async';
 
 import 'package:dart_repl/src/scope.dart' as scope_;
