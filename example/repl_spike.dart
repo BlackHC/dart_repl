@@ -32,7 +32,7 @@ Future repl(VMIsolateRef isolate) async {
   final rootLibrary = await runnable.rootLibrary.load();
   final executionScope = await rootLibrary.classes['ExecutionScope'].load();
 
-  while(true) {
+  while (true) {
     stdout.write('>>> ');
 
     final input = stdin.readLineSync();
@@ -43,8 +43,7 @@ Future repl(VMIsolateRef isolate) async {
       final result = await executionScope.evaluate(input);
       final value = await result.getValue();
       if (value != null) print(value);
-    }
-    on VMErrorException catch (errorRef) {
+    } on VMErrorException catch (errorRef) {
       print(errorRef);
     }
   }

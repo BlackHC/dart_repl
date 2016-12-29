@@ -70,8 +70,7 @@ Future repl() async {
         print(errorRef);
       }
     }
-  }
-  finally {
+  } finally {
     client.close();
   }
 }

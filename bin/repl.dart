@@ -11,7 +11,8 @@ Future main(List<String> args) async {
   var parser = new ArgParser();
   parser.addFlag('help');
   parser.addOption('adhoc-import', allowMultiple: true);
-  parser.addOption('package-dir', allowMultiple: false, defaultsTo: Directory.current.absolute.path);
+  parser.addOption('package-dir', allowMultiple: false,
+      defaultsTo: Directory.current.absolute.path);
   var results = parser.parse(args);
 
   if (results['help'] as bool) {
