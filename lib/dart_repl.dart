@@ -6,6 +6,5 @@
 /// More dartdocs go here.
 library dart_repl;
 
-export 'src/repl.dart';
-
-// TODO: Export any libraries intended for clients of this package.
+export 'src/repl.dart' show repl;
+export 'src/custom_repl.dart' show customRepl;

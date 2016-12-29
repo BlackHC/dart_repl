@@ -8,8 +8,10 @@ environment:
   sdk: '>=1.0.0 <2.0.0'
 
 dependencies:
+  args:
   vm_service_client:
   analyzer:
+  package_resolver:
 #  lib_name: any
 
 dev_dependencies:

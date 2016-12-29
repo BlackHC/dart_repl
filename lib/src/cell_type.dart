@@ -16,6 +16,7 @@ bool _tryParse(String code, Function parse) {
   final node = parse(parser, token) as AstNode;
 
   return !errorListener.errorReported &&
+      node != null &&
       node.endToken.next.type == TokenType.EOF;
 }
 
