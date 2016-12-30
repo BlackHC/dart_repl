@@ -58,12 +58,15 @@ Future repl() async {
           cell_environment.result__ = (await cell_environment.result__);
         }
         if (cell_environment.result__ is Stream) {
+          print('(Reading stream...)');
           cell_environment.result__ =
-              (cell_environment.result__ as Stream).toList();
+              await ((cell_environment.result__ as Stream).toList());
         }
+
         if (cell_environment.result__ != null) {
           print(cell_environment.result__);
         }
+
         cell_environment.Cell.add(new Cell(
             new Scope.clone(currentScope), input, cell_environment.result__));
       } on VMErrorException catch (errorRef) {
