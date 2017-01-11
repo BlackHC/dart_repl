@@ -12,7 +12,6 @@ dependencies:
   vm_service_client:
   analyzer:
   package_resolver:
-#  lib_name: any
 
 dev_dependencies:
   test: '>=0.12.0 <0.13.0'

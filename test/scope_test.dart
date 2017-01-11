@@ -1,5 +1,6 @@
-// Copyright (c) 2016, Andreas 'blackhc' Kirsch. All rights reserved. Use of this source code
-// is governed by a BSD-style license that can be found in the LICENSE file.
+// Copyright (c) 2016, Andreas 'blackhc' Kirsch. All rights reserved. Use of 
+// this source code is governed by a BSD-style license that can be found in the 
+// LICENSE file.
 
 import 'package:dart_repl/src/scope.dart';
 import 'package:test/test.dart';

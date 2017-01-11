@@ -1,6 +1,8 @@
-// Copyright (c) 2016, Andreas 'blackhc' Kirsch. All rights reserved. Use of this source code
-// is governed by a BSD-style license that can be found in the LICENSE file.
-// This library name is important for the execution code to find it dynamically.
+// Copyright (c) 2016, Andreas 'blackhc' Kirsch. All rights reserved. Use of 
+// this source code is governed by a BSD-style license that can be found in the 
+// LICENSE file.
+
+/// This library name is important for the execution code to find it dynamically.
 library dynamic_environment;
 
 import 'dart:async';
