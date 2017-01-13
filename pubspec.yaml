@@ -1,8 +1,8 @@
 name: dart_repl
-description: A starting point for Dart libraries or applications.
-version: 0.0.1
-#author: blackhc <email@example.com>
-#homepage: https://www.example.com
+description: A Dart REPL inspired by Python's interactive mode.
+version: 0.9.0
+author: blackhc <blackhc@gmail.com>
+homepage: https://blog.blackhc.net
 
 environment:
   sdk: '>=1.0.0 <2.0.0'
@@ -12,6 +12,8 @@ dependencies:
   vm_service_client:
   analyzer:
   package_resolver:
+  dart_repl_sandbox:
+    path: lib/src/sandbox
 
 dev_dependencies:
   test: '>=0.12.0 <0.13.0'

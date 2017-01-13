@@ -1,16 +1,17 @@
-// Copyright (c) 2016, Andreas 'blackhc' Kirsch. All rights reserved. Use of 
-// this source code is governed by a BSD-style license that can be found in the 
+// Copyright (c) 2016, Andreas 'blackhc' Kirsch. All rights reserved. Use of
+// this source code is governed by a BSD-style license that can be found in the
 // LICENSE file.
 
 /// This library name is important for the execution code to find it dynamically.
 library dynamic_environment;
 
+// Make Futures and Streams available.
 import 'dart:async';
 
-import 'package:dart_repl/src/scope.dart' as scope_;
+import 'package:dart_repl_sandbox/scope.dart' as scope_;
 
 // Import the cell environment.
-import 'package:dart_repl/src/cell_environment.dart';
+import 'package:dart_repl_sandbox/cell_environment.dart';
 
 /*${IMPORTS}*/
 
