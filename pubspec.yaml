@@ -1,7 +1,7 @@
 name: dart_repl
 description: A Dart REPL proof of concept inspired by Python's interactive mode.
 version: 0.9.0
-author: blackhc <blackhc@gmail.com>
+author: Andreas 'blackhc' Kirsch <blackhc@gmail.com>
 homepage: https://blog.blackhc.net
 
 environment:
