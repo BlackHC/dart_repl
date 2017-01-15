@@ -2,7 +2,7 @@
 // this source code is governed by a BSD-style license that can be found in the
 // LICENSE file.
 
-import 'package:dart_repl_sandbox/scope.dart';
+import 'package:dart_repl/src/sandbox/lib/scope.dart';
 import 'package:test/test.dart';
 
 void main() {

@@ -4,6 +4,8 @@ version: 1.0.0
 author: blackhc <blackhc@gmail.com>
 homepage: https://blog.blackhc.net
 # We never want to publish this package separately.
+# For all purposes, this is a virtual package for now as we don't depend on it
+# either. We create a package path for it in sandbox_isolate.dart.
 publish_to: none
 
 environment:

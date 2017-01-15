@@ -1,5 +1,5 @@
 name: dart_repl
-description: A Dart REPL inspired by Python's interactive mode.
+description: A Dart REPL proof of concept inspired by Python's interactive mode.
 version: 0.9.0
 author: blackhc <blackhc@gmail.com>
 homepage: https://blog.blackhc.net
@@ -8,12 +8,10 @@ environment:
   sdk: '>=1.0.0 <2.0.0'
 
 dependencies:
-  args:
-  vm_service_client:
-  analyzer:
-  package_resolver:
-  dart_repl_sandbox:
-    path: lib/src/sandbox
+  args: ">=0.13.7 <0.14.0"
+  vm_service_client: ">=0.2.2+4 <0.3.0"
+  analyzer: ">=0.29.2 <0.30.0"
+  package_resolver: ">=1.0.2 <2.0.0"
 
 dev_dependencies:
   test: '>=0.12.0 <0.13.0'
