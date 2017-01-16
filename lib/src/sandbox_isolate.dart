@@ -111,7 +111,6 @@ Future<PackageResolver> mergePackageConfigs(String otherPackageRoot) async {
   config['dart_repl_sandbox'] =
       new Uri.directory(currentConfig['dart_repl'].path + 'src/sandbox/');
   config.addAll(otherConfig);
-  print(config);
   return new PackageResolver.config(config);
 }
 
