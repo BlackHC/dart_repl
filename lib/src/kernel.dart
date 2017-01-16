@@ -11,7 +11,7 @@ import 'package:dart_repl/src/cell_type.dart';
 import 'package:dart_repl/src/sandbox/isolate_messages.dart';
 import 'package:vm_service_client/vm_service_client.dart';
 
-Future runRepl(SandboxIsolate sandboxIsolate) async {
+Future<Null> runRepl(SandboxIsolate sandboxIsolate) async {
   final client =
       new VMServiceClient.connect((await Service.getInfo()).serverUri);
 

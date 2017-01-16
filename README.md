@@ -8,6 +8,25 @@ See the [Dart REPL Directions brain-dump](https://docs.google.com/document/d/1gD
 
 ## Usage
 
+## Using `pub global run`
+
+You can install and setup `dart_repl` using:
+
+    pub global activate dart_repl
+
+To run it, simply execute:
+
+    pub global run dart_repl
+
+If you run it from a directory that contains a Dart package (it needs a .packages file), it will load all
+dependencies automatically and allow you to import libraries adhoc:
+
+    pub global run dart_repl --adhoc-import package:built_collection/built_collection.dart
+
+(if your package depends on built_collection).
+
+This is the preferred way of running dart_repl as it requires no additional setup.
+
 ## From another package
 
 You can add a `dev_dependency:` to your `pubspec.yaml`:
@@ -32,14 +51,10 @@ From the command-line
 
     dart bin/dart_repl.dart
 
-To import additional libraries:
+To import additional libraries, you need to specify a package directory (--package-dir) to allow 
+it to resolve dependencies:
 
     dart bin/dart_repl.dart --package-dir ~/git/built_collection.dart/ --adhoc-import lib/built_collection.dart
-
-## `pub global run` is currently not supported
-
-`pub global run` only provides a packageRoot and packages are served via a web service. This special case is not 
-handled at the moment, so it will fail to start. Contributions are welcome!
 
 ## Features requests and bugs
 

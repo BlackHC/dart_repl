@@ -8,7 +8,7 @@ import 'dart:developer';
 import 'package:dart_repl/src/sandbox_isolate.dart';
 import 'package:dart_repl/src/kernel.dart';
 
-Future dartRepl(
+Future<Null> dartRepl(
     {String packageDir, List<String> imports = const <String>[]}) async {
   await Service.controlWebServer(enable: true);
 

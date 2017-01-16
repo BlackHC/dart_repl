@@ -3,6 +3,7 @@
 // LICENSE file.
 import 'dart:async';
 import 'dart:collection';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
@@ -48,8 +49,8 @@ class SandboxIsolate {
 /// the running `SandboxIsolate`.
 Future<SandboxIsolate> bootstrapIsolate(
     {String packageDir, List<String> imports = const <String>[]}) async {
-  final mergedPackageConfig = await mergePackageConfigs(packageDir);
-  final mergedPackageConfigUri = await mergedPackageConfig.packageConfigUri;
+  final packageConfig = await createPackageConfig(packageDir);
+  final packageConfigUri = await packageConfig.packageConfigUri;
 
   final baseDynamicEnvironmentUri = await resolvePackageFile(
       'package:dart_repl/src/template/dynamic_environment.dart');
@@ -57,22 +58,23 @@ Future<SandboxIsolate> bootstrapIsolate(
       await resolvePackageFile('package:dart_repl/src/template/isolate.dart');
 
   final instanceDir = Directory.systemTemp.createTempSync('custom_dart_repl');
-  final dynamicEnvironmentFile = new File.fromUri(baseDynamicEnvironmentUri)
-      .copySync(instanceDir.path + '/dynamic_environment.dart');
-  final isolateFile = new File.fromUri(baseIsolateUri)
-      .copySync(instanceDir.path + '/isolate.dart');
+  final dynamicEnvironmentFile =
+      new File(instanceDir.path + '/dynamic_environment.dart');
+  final isolateFile = new File(instanceDir.path + '/isolate.dart');
 
   // Copy isolate.dart.
-  isolateFile.writeAsStringSync(isolateFile.readAsStringSync());
+  isolateFile.writeAsStringSync(await readUrl(baseIsolateUri));
 
-  // Update imports in the dynamic environment.
+  // Copy dynamic_environment.dart and update imports in the
+  // dynamic environment.
   final customImports = imports
       .map((import) => 'import \'${getImportPath(import, packageDir)}\';')
       .join('\n');
-  dynamicEnvironmentFile.writeAsStringSync(dynamicEnvironmentFile
-      .readAsStringSync()
-      .replaceAll('/*\${IMPORTS}*/', customImports));
+  dynamicEnvironmentFile.writeAsStringSync(
+      (await readUrl(baseDynamicEnvironmentUri))
+          .replaceAll('/*\${IMPORTS}*/', customImports));
 
+  // Setup communication channels.
   final receiverQueue = new MessageQueue();
   final receivePort = new ReceivePort();
   receivePort.listen(receiverQueue.addMessage);
@@ -89,7 +91,7 @@ Future<SandboxIsolate> bootstrapIsolate(
       isolateFile.uri, [], receivePort.sendPort,
       onExit: onExitPort.sendPort,
       checked: true,
-      packageConfig: mergedPackageConfigUri);
+      packageConfig: packageConfigUri);
 
   final sendPort = await receiverQueue.receive() as SendPort;
 
@@ -100,18 +102,49 @@ Future<SandboxIsolate> bootstrapIsolate(
       onExit: onExitCompleter.future);
 }
 
-Future<PackageResolver> mergePackageConfigs(String otherPackageRoot) async {
-  final currentConfig = await PackageResolver.current.packageConfigMap;
-  final otherConfig = otherPackageRoot != null
-      ? (await SyncPackageResolver.loadConfig(otherPackageRoot + '/.packages'))
-          .packageConfigMap
-      : <String, Uri>{};
-  final config = <String, Uri>{};
-  // We only need the dart_repl_sandbox package.
-  config['dart_repl_sandbox'] =
-      new Uri.directory(currentConfig['dart_repl'].path + 'src/sandbox/');
+Future<String> readUrl(Uri uri) async {
+  if (uri.scheme == 'file') {
+    return new File(uri.toFilePath()).readAsStringSync();
+  }
+  final request = await new HttpClient().getUrl(uri);
+  final response = await request.close();
+  final contentPieces = await response.transform(new Utf8Decoder()).toList();
+  final content = contentPieces.join();
+  return content;
+}
+
+Future<PackageResolver> createPackageConfig(String otherPackageDir) async {
+  final otherConfig = await loadPackageConfigMap(otherPackageDir);
+  // Safe copy.
+  final config = new Map<String, Uri>.from(otherConfig);
   config.addAll(otherConfig);
+  // We only need to add a dependency on the dart_repl_sandbox virtual package.
+  final thisPackageUri = await getThisPackageUri();
+  final sandboxPackageUri =
+      thisPackageUri.replace(path: '${thisPackageUri.path}/src/sandbox/');
+  config['dart_repl_sandbox'] = sandboxPackageUri;
   return new PackageResolver.config(config);
+}
+
+Future<Map<String, Uri>> loadPackageConfigMap(String packageDir) async {
+  if (packageDir != null) {
+    // Only try to load it if the .packages file exists.
+    final packagesFilePath = packageDir + '/.packages';
+    if (new File(packagesFilePath).existsSync()) {
+      return (await SyncPackageResolver.loadConfig(packagesFilePath))
+          .packageConfigMap;
+    }
+  }
+  return <String, Uri>{};
+}
+
+Future<Uri> getThisPackageUri() async {
+  final entryLibrary =
+      await resolvePackageFile('package:dart_repl/dart_repl.dart');
+  final thisPackage = entryLibrary.replace(
+      pathSegments: entryLibrary.pathSegments
+          .sublist(0, entryLibrary.pathSegments.length - 1));
+  return thisPackage;
 }
 
 Future<Uri> resolvePackageFile(String packagePath) async {
