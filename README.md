@@ -1,6 +1,6 @@
 # dart_repl
 
-A proof of concept [REPL](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop) environment for dart.
+A proof of concept [REPL](https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop) environment for Dart.
 
 [![asciicast](https://asciinema.org/a/2wxg2qpnlcaw4dpoo6o2c705s.png)](https://asciinema.org/a/2wxg2qpnlcaw4dpoo6o2c705s)
 
@@ -8,16 +8,41 @@ See the [Dart REPL Directions brain-dump](https://docs.google.com/document/d/1gD
 
 ## Usage
 
+## From another package
+
+You can add a `dev_dependency:` to your `pubspec.yaml`:
+
+```
+dev_dependencies:
+  dart_repl:
+  [...]
+```
+
+You can then run the REPL with:
+
+    pub run dart_repl
+
+It will automatically resolve all additional adhoc imports against the dependencies of your package: 
+
+    pub run dart_repl --adhoc-import package:built_collection/built_collection.dart
+
+## From a checkout
+
 From the command-line
 
-    dart --enable-vm-service bin/dart_repl
-    
+    dart bin/dart_repl.dart
+
 To import additional libraries:
 
-    dart --enable-vm-service bin/repl.dart --package-dir ~/git/built_collection.dart/ --adhoc-import lib/built_collection.dart,package:test/test.dart
+    dart bin/dart_repl.dart --package-dir ~/git/built_collection.dart/ --adhoc-import lib/built_collection.dart
 
-## Features and bugs
+## `pub global run` is currently not supported
+
+`pub global run` only provides a packageRoot and packages are served via a web service. This special case is not 
+handled at the moment, so it will fail to start. Contributions are welcome!
+
+## Features requests and bugs
 
 Please file feature requests and bugs at the [issue tracker][tracker].
 
-[tracker]: http://example.com/issues/replaceme
+[tracker]: https://github.com/BlackHC/dart_repl/issues

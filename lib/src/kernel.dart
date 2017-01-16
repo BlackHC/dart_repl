@@ -8,7 +8,7 @@ import 'dart:io';
 import 'dart:isolate';
 import 'package:dart_repl/src/sandbox_isolate.dart';
 import 'package:dart_repl/src/cell_type.dart';
-import 'package:dart_repl_sandbox/isolate_messages.dart';
+import 'package:dart_repl/src/sandbox/isolate_messages.dart';
 import 'package:vm_service_client/vm_service_client.dart';
 
 Future runRepl(SandboxIsolate sandboxIsolate) async {
