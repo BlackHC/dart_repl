@@ -2,8 +2,8 @@
 // this source code is governed by a BSD-style license that can be found in the
 // LICENSE file.
 
-/// This library name is important for the execution code to find it dynamically.
-library dynamic_environment;
+/// This library name is needed to find the library using reflection.
+library sandbox;
 
 // Make Futures and Streams available.
 import 'dart:async';
@@ -13,8 +13,8 @@ import 'package:dart_repl_sandbox/scope.dart' as scope_;
 // Import the cell environment.
 import 'package:dart_repl_sandbox/cell_environment.dart';
 
-/*${IMPORTS}*/
+/*{SOURCE}*/
 
-// Bind the scope instances to this library to allow it to find symbols
-// exposed to this library.
-class Scope extends scope_.Scope {}
+// By importing this after source, __env cannot be hidden.
+import 'package:dart_repl_sandbox/cell_environment.dart' as __env;
+

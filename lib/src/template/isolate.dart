@@ -5,23 +5,21 @@
 import 'dart:async';
 import 'dart:isolate';
 
+// TODO: recreate a dart_repl_sandbox package to fix these warnings?
 import 'package:dart_repl_sandbox/cell.dart';
 import 'package:dart_repl_sandbox/scope.dart' as scope;
 import 'package:dart_repl_sandbox/cell_environment.dart' as cell_environment;
 import 'package:dart_repl_sandbox/isolate_messages.dart';
 
-import 'dynamic_environment.dart';
-
-// Scope from dynamic_environment is lexically bound to imports in that library.
-Scope isolateScope;
+// Include the head of the cell chain. This is important for reload sources to
+// work.
+// The kernel code uses reflection to find this library.
+import 'sandbox.dart';
 
 Future main(List<String> args, SendPort sendPort) async {
   final receivePort = new ReceivePort();
   sendPort.send(receivePort.sendPort);
   // Communications channel are now established.
-
-  // Create the main scope.
-  isolateScope = new Scope();
 
   receivePort.listen((Object message) async {
     if (message == COMPLETE_RESULT) {
@@ -47,8 +45,7 @@ Future main(List<String> args, SendPort sendPort) async {
       sendPort.send(null);
     } else if (message is Map && message['type'] == SAVE_CELL) {
       final input = message['input'] as String;
-      cell_environment.Cell.add(new Cell(new scope.Scope.clone(isolateScope),
-          input, cell_environment.result__));
+      cell_environment.Cell.add(new Cell(input, cell_environment.result__));
       sendPort.send(null);
     } else {
       throw 'Unknown message $message!';

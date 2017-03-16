@@ -23,7 +23,9 @@ Future<Null> runRepl(SandboxIsolate sandboxIsolate) async {
 
     final runnableIsolate =
         await getRunnableIsolate(vm, sandboxIsolate.isolate);
-    final scopeLibrary = await runnableIsolate.rootLibrary.load();
+    final sandboxLibrary = await runnableIsolate.libraries.values
+        .firstWhere((ref) => ref.name == 'sandbox')
+        .load();
 
     while (true) {
       stdout.write('>>> ');
@@ -38,33 +40,77 @@ Future<Null> runRepl(SandboxIsolate sandboxIsolate) async {
       try {
         sandboxIsolate.sendPort.send(RESET_RESULT);
         await sandboxIsolate.receiverQueue.receive();
-        final scopeField = await scopeLibrary.fields['isolateScope'].load();
-        if (isExpression(input)) {
-          await scopeField.value.evaluate('result__ = $input');
-        } else if (isStatements(input)) {
-          await scopeField.value.evaluate('() { $input }()');
-        } else {
-          print('Syntax not supported. Trying...');
-          await scopeField.value.evaluate('$input');
-        }
+        final cellType = determineCellType(input);
+        final eatNull = await executeCell(
+            cellType, input, sandboxIsolate, runnableIsolate, sandboxLibrary);
 
         sandboxIsolate.sendPort.send(COMPLETE_RESULT);
         final resultText =
             await sandboxIsolate.receiverQueue.receive() as String;
-        if (resultText != null) {
+        if (resultText != null || !eatNull) {
           print(resultText);
         }
 
         sandboxIsolate.sendPort.send({'type': SAVE_CELL, 'input': input});
         await sandboxIsolate.receiverQueue.receive();
       } on VMErrorException catch (errorRef) {
-        print(errorRef);
+        print(errorRef.error.message);
       }
     }
   } finally {
     sandboxIsolate.isolate.kill();
     client.close();
   }
+}
+
+/// Execute input as cellType.
+///
+/// Tries to append ; to fix missing ;s
+///
+/// Returns whether to eat 'null' results or not.
+Future<bool> executeCell(
+    CellType cellType,
+    String input,
+    SandboxIsolate sandboxIsolate,
+    VMRunnableIsolate runnableIsolate,
+    VMLibrary sandboxLibrary) async {
+  bool eatNull = true;
+  if (cellType == CellType.UNKNOWN) {
+    final fixedInput = input + ';';
+    final fixedCellType = determineCellType(fixedInput);
+    if (fixedCellType != CellType.UNKNOWN) {
+      return executeCell(fixedCellType, fixedInput, sandboxIsolate,
+          runnableIsolate, sandboxLibrary);
+    }
+  }
+  switch (cellType) {
+    case CellType.TOP_LEVEL:
+      sandboxIsolate.cellChain.addCell(input);
+      //print('reload sources');
+      final report = await runnableIsolate.reloadSources();
+      if (!report.status) {
+        print(report.message);
+        // Undo the last cell, so we can try again.
+        sandboxIsolate.cellChain.undoCell();
+      }
+      break;
+    case CellType.STATEMENTS:
+      await sandboxLibrary.evaluate('result__ = () { $input }()');
+      break;
+    case CellType.EXPRESSION:
+      await sandboxLibrary.evaluate('result__ = $input');
+      eatNull = false;
+      break;
+    case CellType.AWAIT_EXPRESSION:
+      await sandboxLibrary.evaluate('result__ = (() async => $input)()');
+      eatNull = false;
+      break;
+    case CellType.UNKNOWN:
+      print('Syntax not supported. Trying...');
+      await sandboxLibrary.evaluate('$input');
+      break;
+  }
+  return eatNull;
 }
 
 Future<VMRunnableIsolate> getRunnableIsolate(VM vm, Isolate isolate) async {
@@ -81,7 +127,7 @@ Future<VMRunnableIsolate> getRunnableIsolate(VM vm, Isolate isolate) async {
 
 Future main() async {
   final sandboxIsolate = await bootstrapIsolate(
-      packageDir: '/home/blackhc/git/built_collection.dart',
+      packageDir: '/Users/blackhc/git/built_collection.dart',
       imports: ['lib/built_collection.dart']);
   await runRepl(sandboxIsolate);
 }

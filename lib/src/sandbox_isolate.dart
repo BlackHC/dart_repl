@@ -7,6 +7,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:dart_repl/src/cell_generator.dart';
+import 'package:meta/meta.dart';
 import 'package:package_resolver/package_resolver.dart';
 
 /// Simple queue of future messages.
@@ -41,8 +43,15 @@ class SandboxIsolate {
   final MessageQueue receiverQueue;
   final Future onExit;
 
+  /// Path for all the top level cells.
+  final TopLevelCellChain cellChain;
+
   SandboxIsolate(
-      {this.isolate, this.sendPort, this.receiverQueue, this.onExit});
+      {@required this.isolate,
+      @required this.sendPort,
+      @required this.receiverQueue,
+      @required this.onExit,
+      @required this.cellChain});
 }
 
 /// Copies the template files, installs the adhoc imports, and returns
@@ -53,26 +62,38 @@ Future<SandboxIsolate> bootstrapIsolate(
   final packageConfigUri = await packageConfig.packageConfigUri;
 
   final baseDynamicEnvironmentUri = await resolvePackageFile(
-      'package:dart_repl/src/template/dynamic_environment.dart');
+      'package:dart_repl/src/template/sandbox.dart');
+  final baseCellTemplateUri = await resolvePackageFile(
+      'package:dart_repl/src/template/cell_template.dart');
   final baseIsolateUri =
       await resolvePackageFile('package:dart_repl/src/template/isolate.dart');
 
-  final instanceDir = Directory.systemTemp.createTempSync('custom_dart_repl');
-  final dynamicEnvironmentFile =
-      new File(instanceDir.path + '/dynamic_environment.dart');
+  final instanceDir = Directory.systemTemp.createTempSync('dart_repl');
+
   final isolateFile = new File(instanceDir.path + '/isolate.dart');
 
   // Copy isolate.dart.
   isolateFile.writeAsStringSync(await readUrl(baseIsolateUri));
 
-  // Copy dynamic_environment.dart and update imports in the
+  // Copy sandbox.dart and update imports in the
   // dynamic environment.
+  final cellTemplate = new DartTemplate(await readUrl(baseCellTemplateUri));
+  final headTemplate =
+      new DartTemplate(await readUrl(baseDynamicEnvironmentUri));
+
+  // Head template is imported by the isolate!
+  final cellChain = new TopLevelCellChain(
+      cellTemplate, headTemplate, 'sandbox.dart', instanceDir.path);
+
+  // Create the first cell that imports everything specified on the command
+  // line.
+  // Need to export everything to make imports available later on,
+  // too.
   final customImports = imports
-      .map((import) => 'import \'${getImportPath(import, packageDir)}\';')
+      .map((import) => 'export \'${getImportPath(import, packageDir)}\';')
       .join('\n');
-  dynamicEnvironmentFile.writeAsStringSync(
-      (await readUrl(baseDynamicEnvironmentUri))
-          .replaceAll('/*\${IMPORTS}*/', customImports));
+  // This is needed to create the head template, too!
+  cellChain.addCell(customImports);
 
   // Setup communication channels.
   final receiverQueue = new MessageQueue();
@@ -99,7 +120,8 @@ Future<SandboxIsolate> bootstrapIsolate(
       isolate: isolate,
       receiverQueue: receiverQueue,
       sendPort: sendPort,
-      onExit: onExitCompleter.future);
+      onExit: onExitCompleter.future,
+      cellChain: cellChain);
 }
 
 Future<String> readUrl(Uri uri) async {
@@ -114,6 +136,7 @@ Future<String> readUrl(Uri uri) async {
 }
 
 Future<PackageResolver> createPackageConfig(String otherPackageDir) async {
+  // TODO: better error handling when 'pub get' wasn't called on either package dir!!
   final otherConfig = await loadPackageConfigMap(otherPackageDir);
   // Safe copy.
   final config = new Map<String, Uri>.from(otherConfig);
@@ -151,6 +174,7 @@ Future<Uri> resolvePackageFile(String packagePath) async {
   return await Isolate.resolvePackageUri(Uri.parse(packagePath));
 }
 
+// TODO: add support for pub: that resolves a versioned package?
 String getImportPath(String import, String packageDir) {
   if (import.startsWith('package:') || import.startsWith('dart:')) {
     return import;
