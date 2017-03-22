@@ -13,6 +13,11 @@ import 'package:package_resolver/package_resolver.dart';
 
 /// Simple queue of future messages.
 ///
+/// It contains two queues internally. One that stores messages that
+/// have been received but not requested yet (via `receive()`).
+/// And one queue of unfulfilled requests (via `receive()`).
+///
+///
 /// Every time I try to use Streams, I feel stupid :( So let's not do that.
 class MessageQueue {
   final messageQueue = new Queue<Object>();
@@ -144,7 +149,7 @@ Future<PackageResolver> createPackageConfig(String otherPackageDir) async {
   // We only need to add a dependency on the dart_repl_sandbox virtual package.
   final thisPackageUri = await getThisPackageUri();
   final sandboxPackageUri =
-      thisPackageUri.replace(path: '${thisPackageUri.path}/src/sandbox/');
+      thisPackageUri.replace(path: '${thisPackageUri.path}/../sandbox/lib');
   config['dart_repl_sandbox'] = sandboxPackageUri;
   return new PackageResolver.config(config);
 }

@@ -87,7 +87,7 @@ Directory: '/Users/blackhc/IdeaProjects/dart_repl'
 ### TODOs
 
 [] provide a back channel for the sandbox to change its own package config.
-[] find a way to unexport a library
+[] find a way to unexport a library (can we enumerate all the symbols from a library and hide them?)
 
 ## About
 
