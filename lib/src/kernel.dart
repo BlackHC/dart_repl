@@ -38,20 +38,20 @@ Future<Null> runRepl(SandboxIsolate sandboxIsolate) async {
       }
 
       try {
-        sandboxIsolate.sendPort.send(RESET_RESULT);
+        sandboxIsolate.sendPort.send(new ResetResult().toRawMessage());
         await sandboxIsolate.receiverQueue.receive();
         final cellType = determineCellType(input);
         final eatNull = await executeCell(
             cellType, input, sandboxIsolate, runnableIsolate, sandboxLibrary);
 
-        sandboxIsolate.sendPort.send(COMPLETE_RESULT);
+        sandboxIsolate.sendPort.send(new CompleteResult().toRawMessage());
         final resultText =
             await sandboxIsolate.receiverQueue.receive() as String;
         if (resultText != null || !eatNull) {
           print(resultText);
         }
 
-        sandboxIsolate.sendPort.send({'type': SAVE_CELL, 'input': input});
+        sandboxIsolate.sendPort.send(new SaveCell(input).toRawMessage());
         await sandboxIsolate.receiverQueue.receive();
       } on VMErrorException catch (errorRef) {
         print(errorRef.error.message);

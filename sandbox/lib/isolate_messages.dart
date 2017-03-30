@@ -2,14 +2,31 @@
 // this source code is governed by a BSD-style license that can be found in the
 // LICENSE file.
 
-const int RESET_RESULT = 1;
-const int COMPLETE_RESULT = 2;
-const int SAVE_CELL = 3;
+import 'package:dart_repl_sandbox/message_builder.dart';
 
-typedef Map<String, dynamic> RequestCreater(int type, [Object request]);
-
-RequestCreater requestChannel() {
-  int requestId = 0;
-  return (type, [request]) =>
-      {'id': requestId++, 'type': type, 'request': request};
+class ResetResult extends Message<ResetResult> {
+  static ResetResult fromRawMessage(Object simpleFormat) => new ResetResult();
 }
+
+class CompleteResult extends Message<CompleteResult> {
+  static CompleteResult fromRawMessage(Object simpleFormat) =>
+      new CompleteResult();
+}
+
+class SaveCell extends Message<SaveCell> {
+  final String input;
+
+  SaveCell(this.input);
+
+  static SaveCell fromRawMessage(Object simpleFormat) =>
+      new SaveCell(simpleFormat as String);
+
+  @override
+  Object toRawData() => input;
+}
+
+final CellCommandConverters = new MessageConverters({
+  ResetResult: ResetResult.fromRawMessage,
+  CompleteResult: CompleteResult.fromRawMessage,
+  SaveCell: SaveCell.fromRawMessage
+});

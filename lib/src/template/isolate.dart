@@ -7,13 +7,13 @@ import 'dart:isolate';
 
 // TODO: recreate a dart_repl_sandbox package to fix these warnings?
 import 'package:dart_repl_sandbox/cell.dart';
-import 'package:dart_repl_sandbox/scope.dart' as scope;
 import 'package:dart_repl_sandbox/cell_environment.dart' as cell_environment;
 import 'package:dart_repl_sandbox/isolate_messages.dart';
 
 // Include the head of the cell chain. This is important for reload sources to
 // work.
 // The kernel code uses reflection to find this library.
+import 'package:dart_repl_sandbox/message_builder.dart';
 import 'sandbox.dart';
 
 Future main(List<String> args, SendPort sendPort) async {
@@ -21,8 +21,10 @@ Future main(List<String> args, SendPort sendPort) async {
   sendPort.send(receivePort.sendPort);
   // Communications channel are now established.
 
-  receivePort.listen((Object message) async {
-    if (message == COMPLETE_RESULT) {
+  receivePort.listen((Object typedMessage) async {
+    print(typedMessage);
+    Message message = CellCommandConverters.fromRawMessage(typedMessage);
+    if (message is CompleteResult) {
       if (cell_environment.result__ is Future) {
         // TODO: this should be signaled using a response message!
         print('(Awaiting result...)');
@@ -40,15 +42,15 @@ Future main(List<String> args, SendPort sendPort) async {
       } else {
         sendPort.send(null);
       }
-    } else if (message == RESET_RESULT) {
+    } else if (message is ResetResult) {
       cell_environment.result__ = null;
       sendPort.send(null);
-    } else if (message is Map && message['type'] == SAVE_CELL) {
-      final input = message['input'] as String;
-      cell_environment.Cell.add(new Cell(input, cell_environment.result__));
+    } else if (message is SaveCell) {
+      cell_environment.Cell
+          .add(new Cell(message.input, cell_environment.result__));
       sendPort.send(null);
     } else {
-      throw 'Unknown message $message!';
+      throw new StateError('Unknown message $message!');
     }
   });
 }
