@@ -13,6 +13,10 @@ import 'package:dart_repl_sandbox/scope.dart' as scope_;
 // Import the cell environment.
 import 'package:dart_repl_sandbox/cell_environment.dart';
 
+import 'package:dart_repl_sandbox/builtin_commands.dart';
+
+// TODO: this duplicates most of cell_template.dart :((
+
 /*{SOURCE}*/
 
 // By importing this after source, __env cannot be hidden.

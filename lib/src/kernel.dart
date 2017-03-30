@@ -8,8 +8,11 @@ import 'dart:io';
 import 'dart:isolate';
 import 'package:dart_repl/src/sandbox_isolate.dart';
 import 'package:dart_repl/src/cell_type.dart';
+import 'package:dart_repl_sandbox/data_queue.dart';
 import 'package:dart_repl_sandbox/isolate_messages.dart';
+import 'package:dart_repl_sandbox/message_queue.dart';
 import 'package:vm_service_client/vm_service_client.dart';
+import 'package:dart_repl_sandbox/message_channel.dart';
 
 Future<Null> runRepl(SandboxIsolate sandboxIsolate) async {
   final client =
@@ -27,6 +30,19 @@ Future<Null> runRepl(SandboxIsolate sandboxIsolate) async {
         .firstWhere((ref) => ref.name == 'sandbox')
         .load();
 
+    final channel = new MessageChannel.fromPorts(sandboxIsolate.receiverQueue,
+        CellReplyConverters, sandboxIsolate.sendPort, CellCommandConverters);
+
+    final sandboxRequestReceiver = new ReceivePort();
+    channel
+        .sendReceive(new RegisterRequestPort(sandboxRequestReceiver.sendPort));
+
+    final sandboxRequestDataQueue = new DataQueue();
+    sandboxRequestReceiver
+        .listen((Object data) => sandboxRequestDataQueue.add(data));
+    final sandboxRequestQueue = new MessageQueue(
+        sandboxRequestDataQueue, SandboxRequestQueueConverters);
+
     while (true) {
       stdout.write('>>> ');
 
@@ -38,21 +54,31 @@ Future<Null> runRepl(SandboxIsolate sandboxIsolate) async {
       }
 
       try {
-        sandboxIsolate.sendPort.send(new ResetResult().toRawMessage());
-        await sandboxIsolate.receiverQueue.receive();
+        await channel.sendReceive(new ResetResult());
+
         final cellType = determineCellType(input);
         final eatNull = await executeCell(
             cellType, input, sandboxIsolate, runnableIsolate, sandboxLibrary);
 
-        sandboxIsolate.sendPort.send(new CompleteResult().toRawMessage());
-        final resultText =
-            await sandboxIsolate.receiverQueue.receive() as String;
+        final cellResult =
+            await channel.sendReceive(new CompleteResult()) as CellResult;
+
+        final resultText = cellResult?.result;
         if (resultText != null || !eatNull) {
           print(resultText);
         }
 
-        sandboxIsolate.sendPort.send(new SaveCell(input).toRawMessage());
-        await sandboxIsolate.receiverQueue.receive();
+        await channel.sendReceive(new SaveCell(input));
+
+        // Process all the cell requests now.
+        // TODO: we would actually want to wait for the whole event queue to be
+        // empty. Maybe we need to ping the isolate?
+        final sandboxRequests = sandboxRequestQueue.receiveAllQueued();
+        for(final sandboxRequest in sandboxRequests) {
+          if (sandboxRequest is ImportLibraryRequest) {
+            await executeImport(sandboxIsolate, runnableIsolate, sandboxRequest);
+          }
+        }
       } on VMErrorException catch (errorRef) {
         print(errorRef.error.message);
       }
@@ -61,6 +87,14 @@ Future<Null> runRepl(SandboxIsolate sandboxIsolate) async {
     sandboxIsolate.isolate.kill();
     client.close();
   }
+}
+
+Future executeImport(
+    SandboxIsolate sandboxIsolate,
+    VMRunnableIsolate runnableIsolate,
+    ImportLibraryRequest importLibraryRequest) async {
+  await linkAndExecuteCell(sandboxIsolate,
+      "export \'${importLibraryRequest.libraryPath}\';", runnableIsolate);
 }
 
 /// Execute input as cellType.
@@ -85,14 +119,7 @@ Future<bool> executeCell(
   }
   switch (cellType) {
     case CellType.TOP_LEVEL:
-      sandboxIsolate.cellChain.addCell(input);
-      //print('reload sources');
-      final report = await runnableIsolate.reloadSources();
-      if (!report.status) {
-        print(report.message);
-        // Undo the last cell, so we can try again.
-        sandboxIsolate.cellChain.undoCell();
-      }
+      await linkAndExecuteCell(sandboxIsolate, input, runnableIsolate);
       break;
     case CellType.STATEMENTS:
       await sandboxLibrary.evaluate('result__ = () { $input }()');
@@ -111,6 +138,18 @@ Future<bool> executeCell(
       break;
   }
   return eatNull;
+}
+
+Future linkAndExecuteCell(SandboxIsolate sandboxIsolate, String input,
+    VMRunnableIsolate runnableIsolate) async {
+  sandboxIsolate.cellChain.addCell(input);
+  //print('reload sources');
+  final report = await runnableIsolate.reloadSources();
+  if (!report.status) {
+    print(report.message);
+    // Undo the last cell, so we can try again.
+    sandboxIsolate.cellChain.undoCell();
+  }
 }
 
 Future<VMRunnableIsolate> getRunnableIsolate(VM vm, Isolate isolate) async {

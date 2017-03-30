@@ -4,10 +4,10 @@
 
 typedef T FromMessage<T>(Object simpleFormat);
 
-class MessageConverters {
+class MessageConverter {
   final Map<String, FromMessage> messageConverters;
 
-  MessageConverters(Map<Type, FromMessage> messageConverters)
+  MessageConverter(Map<Type, FromMessage> messageConverters)
       : messageConverters = prepareMessageBuilders(messageConverters);
 
   static Map<String, FromMessage> prepareMessageBuilders(
@@ -21,16 +21,21 @@ class MessageConverters {
       return messageConverters[typeString](null) as T;
     } else if (rawMessage is Map) {
       final typeString = rawMessage['type'] as String;
-      final simpleObject = rawMessage['data'] as String;
+      final simpleObject = rawMessage['data'] as Object;
       return messageConverters[typeString](simpleObject) as T;
     }
     throw new ArgumentError.value(
         rawMessage, 'message', 'expected String or Map!');
   }
 
-  static Object toRawMessage(Type type, Object rawData) => rawData != null
+  static Object encapsulateRawData(Type type, Object rawData) => rawData != null
       ? {'type': type.toString(), 'data': rawData}
       : type.toString();
+
+  Object toRawMessage(Message message) {
+    // TODO: Check to make sure we know how to deserialize message.
+    return message.toRawMessage();
+  }
 }
 
 abstract class Message<T> {
@@ -39,5 +44,5 @@ abstract class Message<T> {
 
   /// Override to return raw data.
   Object toRawData() => null;
-  Object toRawMessage() => MessageConverters.toRawMessage(T, toRawData());
+  Object toRawMessage() => MessageConverter.encapsulateRawData(T, toRawData());
 }
