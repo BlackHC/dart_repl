@@ -35,8 +35,8 @@ Future<SandboxIsolate> bootstrapIsolate(
   final packageConfig = await createPackageConfig(packageDir);
   final packageConfigUri = await packageConfig.packageConfigUri;
 
-  final baseDynamicEnvironmentUri = await resolvePackageFile(
-      'package:dart_repl/src/template/sandbox.dart');
+  final baseDynamicEnvironmentUri =
+      await resolvePackageFile('package:dart_repl/src/template/sandbox.dart');
   final baseCellTemplateUri = await resolvePackageFile(
       'package:dart_repl/src/template/cell_template.dart');
   final baseIsolateUri =

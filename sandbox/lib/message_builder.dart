@@ -7,10 +7,11 @@ typedef T FromMessage<T>(Object simpleFormat);
 class MessageConverters {
   final Map<String, FromMessage> messageConverters;
 
-  MessageConverters(Map<Type, FromMessage> messageConverters) : messageConverters = prepareMessageBuilders(messageConverters);
+  MessageConverters(Map<Type, FromMessage> messageConverters)
+      : messageConverters = prepareMessageBuilders(messageConverters);
 
   static Map<String, FromMessage> prepareMessageBuilders(
-      Map<Type, FromMessage> map) =>
+          Map<Type, FromMessage> map) =>
       new Map<String, FromMessage>.fromIterables(
           map.keys.map((type) => type.toString()), map.values);
 

@@ -28,12 +28,10 @@ bool _tryParse<T>(String code, ParserClosure<T> parse) {
       node.endToken.next.type == TokenType.EOF;
 }
 
-bool isExpression(String code) =>
-    _tryParse(
-        code, (Parser parser, Token token) => parser.parseExpression(token));
+bool isExpression(String code) => _tryParse(
+    code, (Parser parser, Token token) => parser.parseExpression(token));
 
-bool isStatements(String code) =>
-    _tryParse(code, (Parser parser, Token token) {
+bool isStatements(String code) => _tryParse(code, (Parser parser, Token token) {
       final statements = parser.parseStatements(token);
       if (statements.isEmpty) {
         return null;
@@ -41,9 +39,8 @@ bool isStatements(String code) =>
       return statements.last;
     });
 
-bool isTopLevel(String code) =>
-    _tryParse(code,
-        (Parser parser, Token token) => parser.parseCompilationUnit(token));
+bool isTopLevel(String code) => _tryParse(
+    code, (Parser parser, Token token) => parser.parseCompilationUnit(token));
 
 CellType determineCellType(String code) {
   if (isTopLevel(code)) {

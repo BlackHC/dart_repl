@@ -26,14 +26,16 @@ class TopLevelCellChain {
 
   int _currentCellIndex = 0;
 
-  TopLevelCellChain(this.cellTemplate, this.headTemplate, this.headName, this.basePath);
+  TopLevelCellChain(
+      this.cellTemplate, this.headTemplate, this.headName, this.basePath);
 
   String get currentCellPath => '$basePath/$currentCellName';
   String get currentCellName => 'cell${_currentCellIndex}.dart';
   String get headPath => '$basePath/$headName';
 
   void addCell(String source) {
-    final cellSource = _currentCellIndex > 0 ? '''
+    final cellSource = _currentCellIndex > 0
+        ? '''
 // Import the previous cell and make its symbols available to the next
 // cell.
 import '$currentCellName';
@@ -43,7 +45,8 @@ export '$currentCellName';
 import 'package:dart_repl_sandbox/cell_environment.dart' as __env;
 
 $source
-''' : source;
+'''
+        : source;
 
     _currentCellIndex++;
     cellTemplate.instantiate(currentCellPath, cellSource);
