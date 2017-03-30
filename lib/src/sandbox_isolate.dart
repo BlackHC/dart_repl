@@ -7,14 +7,14 @@ import 'dart:io';
 import 'dart:isolate';
 
 import 'package:dart_repl/src/cell_generator.dart';
-import 'package:dart_repl_sandbox/message_queue.dart';
+import 'package:dart_repl_sandbox/data_queue.dart';
 import 'package:meta/meta.dart';
 import 'package:package_resolver/package_resolver.dart';
 
 class SandboxIsolate {
   final Isolate isolate;
   final SendPort sendPort;
-  final MessageQueue receiverQueue;
+  final DataQueue receiverQueue;
   final Future onExit;
 
   /// Path for all the top level cells.
@@ -70,9 +70,9 @@ Future<SandboxIsolate> bootstrapIsolate(
   cellChain.addCell(customImports);
 
   // Setup communication channels.
-  final receiverQueue = new MessageQueue();
+  final receiverQueue = new DataQueue();
   final receivePort = new ReceivePort();
-  receivePort.listen(receiverQueue.addMessage);
+  receivePort.listen(receiverQueue.add);
 
   final onExitPort = new ReceivePort();
   final onExitCompleter = new Completer<Null>();
