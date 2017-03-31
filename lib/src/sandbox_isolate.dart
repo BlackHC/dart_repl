@@ -75,17 +75,19 @@ Future<SandboxIsolate> bootstrapIsolate(
   receivePort.listen(receiverQueue.add);
 
   final onExitPort = new ReceivePort();
-  final onExitCompleter = new Completer<Null>();
-  onExitPort.listen((dynamic unused) {
-    onExitPort.close();
-    onExitCompleter.complete();
-    receivePort.close();
-  });
-
   final onErrorPort = new ReceivePort();
   onErrorPort.listen((dynamic error) {
     print(error);
   });
+
+  final onExitCompleter = new Completer<Null>();
+  onExitPort.listen((dynamic unused) {
+    onExitPort.close();
+    onErrorPort.close();
+    onExitCompleter.complete();
+    receivePort.close();
+  });
+
   // TODO(blackhc): add onError listener!
   final isolate = await Isolate.spawnUri(
       isolateFile.uri, [], receivePort.sendPort,

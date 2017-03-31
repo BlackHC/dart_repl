@@ -6,3 +6,7 @@ MessageSender sandboxRequestSender;
 void import(String path) {
   sandboxRequestSender.send(new ImportLibraryRequest(path));
 }
+
+void exit() {
+  sandboxRequestSender.send(new ExitRequest());
+}

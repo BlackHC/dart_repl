@@ -18,6 +18,7 @@ Future<Null> runRepl(SandboxIsolate sandboxIsolate) async {
   final client =
       new VMServiceClient.connect((await Service.getInfo()).serverUri);
 
+  final sandboxRequestReceiver = new ReceivePort();
   try {
     final vm = await client.getVM();
 
@@ -33,7 +34,6 @@ Future<Null> runRepl(SandboxIsolate sandboxIsolate) async {
     final channel = new MessageChannel.fromPorts(sandboxIsolate.receiverQueue,
         CellReplyConverters, sandboxIsolate.sendPort, CellCommandConverters);
 
-    final sandboxRequestReceiver = new ReceivePort();
     channel
         .sendReceive(new RegisterRequestPort(sandboxRequestReceiver.sendPort));
 
@@ -43,13 +43,12 @@ Future<Null> runRepl(SandboxIsolate sandboxIsolate) async {
     final sandboxRequestQueue = new MessageQueue(
         sandboxRequestDataQueue, SandboxRequestQueueConverters);
 
+    CommandLoop:
     while (true) {
       stdout.write('>>> ');
 
       final input = stdin.readLineSync();
-      if (input == 'exit()') {
-        break;
-      } else if (input.isEmpty) {
+      if (input.isEmpty) {
         continue;
       }
 
@@ -77,6 +76,8 @@ Future<Null> runRepl(SandboxIsolate sandboxIsolate) async {
         for(final sandboxRequest in sandboxRequests) {
           if (sandboxRequest is ImportLibraryRequest) {
             await executeImport(sandboxIsolate, runnableIsolate, sandboxRequest);
+          } else if(sandboxRequest is ExitRequest) {
+            break CommandLoop;
           }
         }
       } on VMErrorException catch (errorRef) {
@@ -86,6 +87,7 @@ Future<Null> runRepl(SandboxIsolate sandboxIsolate) async {
   } finally {
     sandboxIsolate.isolate.kill();
     client.close();
+    sandboxRequestReceiver.close();
   }
 }
 
@@ -125,6 +127,8 @@ Future<bool> executeCell(
       await sandboxLibrary.evaluate('result__ = () { $input }()');
       break;
     case CellType.EXPRESSION:
+      // TODO: to determine whether to eat null, we need to know the actual
+      // type of the expression as void also returns null...
       await sandboxLibrary.evaluate('result__ = $input');
       eatNull = false;
       break;

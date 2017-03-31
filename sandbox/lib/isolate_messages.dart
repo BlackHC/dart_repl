@@ -17,6 +17,10 @@ class RegisterRequestPort extends Message<RegisterRequestPort> {
   Object toRawData() => sendPort;
 }
 
+class TerminateSandbox extends Message<TerminateSandbox> {
+  static TerminateSandbox fromRawMessage(Object simpleFormat) => new TerminateSandbox();
+}
+
 class ResetResult extends Message<ResetResult> {
   static ResetResult fromRawMessage(Object simpleFormat) => new ResetResult();
 }
@@ -39,6 +43,7 @@ class SaveCell extends Message<SaveCell> {
 }
 
 final CellCommandConverters = new MessageConverter({
+  TerminateSandbox: TerminateSandbox.fromRawMessage,
   RegisterRequestPort: RegisterRequestPort.fromRawMessage,
   ResetResult: ResetResult.fromRawMessage,
   CompleteResult: CompleteResult.fromRawMessage,
@@ -72,5 +77,11 @@ class ImportLibraryRequest extends Message<ImportLibraryRequest> {
   Object toRawData() => libraryPath;
 }
 
-final SandboxRequestQueueConverters = new MessageConverter(
-    {ImportLibraryRequest: ImportLibraryRequest.fromRawMessage});
+class ExitRequest extends Message<ExitRequest> {
+  static ExitRequest fromRawMessage(Object simpleFormat) => new ExitRequest();
+}
+
+final SandboxRequestQueueConverters = new MessageConverter({
+  ImportLibraryRequest: ImportLibraryRequest.fromRawMessage,
+  ExitRequest: ExitRequest.fromRawMessage
+});
