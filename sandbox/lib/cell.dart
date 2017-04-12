@@ -6,7 +6,7 @@ import 'dart:collection';
 import 'scope.dart';
 
 // TODO: store the current cell name, too, to make it possible to reimport it.
-// In order to access the namespace...
+// (In order to access the namespace...)
 class Cell {
   final String input;
   final dynamic output;

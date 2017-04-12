@@ -18,7 +18,8 @@ class RegisterRequestPort extends Message<RegisterRequestPort> {
 }
 
 class TerminateSandbox extends Message<TerminateSandbox> {
-  static TerminateSandbox fromRawMessage(Object simpleFormat) => new TerminateSandbox();
+  static TerminateSandbox fromRawMessage(Object simpleFormat) =>
+      new TerminateSandbox();
 }
 
 class ResetResult extends Message<ResetResult> {
@@ -77,11 +78,27 @@ class ImportLibraryRequest extends Message<ImportLibraryRequest> {
   Object toRawData() => libraryPath;
 }
 
+class LoadPackageRequest extends Message<LoadPackageRequest> {
+  final String packageName;
+  final String packageConfigUri;
+
+  LoadPackageRequest(this.packageName, this.packageConfigUri);
+
+  static LoadPackageRequest fromRawMessage(Object simpleFormat) {
+    final dict = simpleFormat as Map<String, String>;
+    return new LoadPackageRequest(dict['name'], dict['configUri']);
+  }
+
+  @override
+  Object toRawData() => {'name': packageName, 'configUri': packageConfigUri};
+}
+
 class ExitRequest extends Message<ExitRequest> {
   static ExitRequest fromRawMessage(Object simpleFormat) => new ExitRequest();
 }
 
 final SandboxRequestQueueConverters = new MessageConverter({
   ImportLibraryRequest: ImportLibraryRequest.fromRawMessage,
+  LoadPackageRequest: LoadPackageRequest.fromRawMessage,
   ExitRequest: ExitRequest.fromRawMessage
 });

@@ -23,7 +23,9 @@ class MessageQueue {
   }
 
   Iterable<Message> receiveAllQueued() {
-    final messages = dataQueue.dataQueue.toList().map<Message>((Object data) => converter.fromRawMessage(data));
+    final messages = dataQueue.dataQueue
+        .toList()
+        .map<Message>((Object data) => converter.fromRawMessage(data));
     dataQueue.dataQueue.clear();
     return messages;
   }

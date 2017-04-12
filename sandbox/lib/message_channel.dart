@@ -4,7 +4,6 @@ import 'package:dart_repl_sandbox/data_queue.dart';
 import 'package:dart_repl_sandbox/message_converter.dart';
 import 'package:dart_repl_sandbox/message_queue.dart';
 
-
 class MessageSender {
   final SendPort sendPort;
   final MessageConverter sendConverter;
@@ -26,7 +25,11 @@ class MessageChannel {
   final MessageSender sender;
 
   MessageChannel(this.receiver, this.sender);
-  factory MessageChannel.fromPorts(DataQueue dataQueue, MessageConverter receiverConverter, SendPort sendPort, MessageConverter sendConverter) {
+  factory MessageChannel.fromPorts(
+      DataQueue dataQueue,
+      MessageConverter receiverConverter,
+      SendPort sendPort,
+      MessageConverter sendConverter) {
     final receiver = new MessageQueue(dataQueue, receiverConverter);
     final sender = new MessageSender(sendPort, sendConverter);
     return new MessageChannel(receiver, sender);

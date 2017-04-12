@@ -6,11 +6,13 @@ import 'dart:async';
 import 'dart:developer';
 import 'dart:io';
 import 'dart:isolate';
+import 'package:dart_repl/src/package_utils.dart';
 import 'package:dart_repl/src/sandbox_isolate.dart';
 import 'package:dart_repl/src/cell_type.dart';
 import 'package:dart_repl_sandbox/data_queue.dart';
 import 'package:dart_repl_sandbox/isolate_messages.dart';
 import 'package:dart_repl_sandbox/message_queue.dart';
+import 'package:pub_cache/pub_cache.dart';
 import 'package:vm_service_client/vm_service_client.dart';
 import 'package:dart_repl_sandbox/message_channel.dart';
 
@@ -73,11 +75,17 @@ Future<Null> runRepl(SandboxIsolate sandboxIsolate) async {
         // TODO: we would actually want to wait for the whole event queue to be
         // empty. Maybe we need to ping the isolate?
         final sandboxRequests = sandboxRequestQueue.receiveAllQueued();
-        for(final sandboxRequest in sandboxRequests) {
+        for (final sandboxRequest in sandboxRequests) {
           if (sandboxRequest is ImportLibraryRequest) {
-            await executeImport(sandboxIsolate, runnableIsolate, sandboxRequest);
-          } else if(sandboxRequest is ExitRequest) {
+            await executeImport(
+                sandboxIsolate, runnableIsolate, sandboxRequest);
+          } else if (sandboxRequest is ExitRequest) {
             break CommandLoop;
+          } else if (sandboxRequest is LoadPackageRequest) {
+            await executeLoadPackage(
+                sandboxIsolate, runnableIsolate, sandboxRequest);
+          } else {
+            throw new StateError("Unknown sandbox request $sandboxRequest!");
           }
         }
       } on VMErrorException catch (errorRef) {
@@ -88,6 +96,22 @@ Future<Null> runRepl(SandboxIsolate sandboxIsolate) async {
     sandboxIsolate.isolate.kill();
     client.close();
     sandboxRequestReceiver.close();
+  }
+}
+
+final pubCache = new PubCache();
+
+Future executeLoadPackage(SandboxIsolate sandboxIsolate,
+    VMRunnableIsolate runnableIsolate, LoadPackageRequest request) async {
+  final packageRef = pubCache.getLatestVersion(request.packageName);
+  final libPath = packageRef.resolve().location.path + "/lib/";
+  final newPackageResolver =
+      await addPackage(request.packageConfigUri, request.packageName, libPath);
+  final packageConfigUri = await newPackageResolver.packageConfigUri;
+  final report = await runnableIsolate.reloadSources(
+      force: true, packagesUrl: packageConfigUri);
+  if (!report.status) {
+    print(report.message);
   }
 }
 
@@ -169,8 +193,9 @@ Future<VMRunnableIsolate> getRunnableIsolate(VM vm, Isolate isolate) async {
 }
 
 Future main() async {
-  final sandboxIsolate = await bootstrapIsolate(
-      packageDir: '/Users/blackhc/git/built_collection.dart',
-      imports: ['lib/built_collection.dart']);
+//  final sandboxIsolate = await bootstrapIsolate(
+//      packageDir: '/Users/blackhc/git/built_collection.dart',
+//      imports: ['lib/built_collection.dart']);
+  final sandboxIsolate = await bootstrapIsolate();
   await runRepl(sandboxIsolate);
 }
