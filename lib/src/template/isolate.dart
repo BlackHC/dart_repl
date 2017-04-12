@@ -6,7 +6,8 @@ import 'dart:async';
 import 'dart:isolate';
 
 // TODO: recreate a dart_repl_sandbox package to fix these warnings?
-import 'package:dart_repl_sandbox/builtin_commands.dart' as builtins;
+import 'package:dart_repl_sandbox/builtin_commands/api.dart' as builtins;
+import 'package:dart_repl_sandbox/builtin_commands/messages.dart';
 import 'package:dart_repl_sandbox/cell.dart';
 import 'package:dart_repl_sandbox/cell_environment.dart' as cell_environment;
 import 'package:dart_repl_sandbox/data_queue.dart';
@@ -16,6 +17,9 @@ import 'package:dart_repl_sandbox/isolate_messages.dart';
 // work.
 // The kernel code uses reflection to find this library.
 import 'package:dart_repl_sandbox/message_channel.dart';
+
+// This is needed to load all the symbols and make them available to the
+// environment at runtime.
 import 'sandbox.dart';
 
 Future main(List<String> args, SendPort sendPort) async {

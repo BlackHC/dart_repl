@@ -8,16 +8,13 @@ library sandbox;
 // Make Futures and Streams available.
 import 'dart:async';
 
-import 'package:dart_repl_sandbox/scope.dart' as scope_;
-
 // Import the cell environment.
 import 'package:dart_repl_sandbox/cell_environment.dart';
-
-import 'package:dart_repl_sandbox/builtin_commands.dart';
-
-// TODO: this duplicates most of cell_template.dart :((
+// Import builtin commands such as `import` or `exit`.
+import 'package:dart_repl_sandbox/builtin_commands/api.dart';
 
 /*{SOURCE}*/
 
-// By importing this after source, __env cannot be hidden.
+// By importing after the current cell, __env and __api cannot be hidden by it.
 import 'package:dart_repl_sandbox/cell_environment.dart' as __env;
+import 'package:dart_repl_sandbox/builtin_commands/api.dart' as __api;

@@ -5,8 +5,10 @@
 // Make Futures and Streams available in general.
 import 'dart:async';
 
-// Provides `Cell`, `In` and `Out`.
+// Import the cell environment.
 import 'package:dart_repl_sandbox/cell_environment.dart';
-import 'package:dart_repl_sandbox/builtin_commands.dart';
+
+// Provide builtin commands like `exit` or `import`.
+import 'package:dart_repl_sandbox/builtin_commands/api.dart';
 
 /*{SOURCE}*/

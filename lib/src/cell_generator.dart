@@ -8,7 +8,7 @@ class DartTemplate {
 
   DartTemplate(this.content);
 
-  void instantiate(String targetPath, [String source]) {
+  void instantiate(String targetPath, [String source, String libraryHeader]) {
     final instanceSource = content.replaceAll('/*{SOURCE}*/', source ?? '');
     new File(targetPath).writeAsStringSync(instanceSource);
     //print('wrote $targetPath:\n$instanceSource');
@@ -43,6 +43,8 @@ export '$currentCellName';
 
 // __env is always available.
 import 'package:dart_repl_sandbox/cell_environment.dart' as __env;
+// Provide builtin commands like `exit` or `import`.
+import 'package:dart_repl_sandbox/builtin_commands/api.dart' as __api;
 
 $source
 '''

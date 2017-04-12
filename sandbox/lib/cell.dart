@@ -1,9 +1,8 @@
 // Copyright (c) 2016, Andreas 'blackhc' Kirsch. All rights reserved. Use of
 // this source code is governed by a BSD-style license that can be found in the
 // LICENSE file.
-import 'dart:collection';
 
-import 'scope.dart';
+import 'dart:collection';
 
 // TODO: store the current cell name, too, to make it possible to reimport it.
 // (In order to access the namespace...)
