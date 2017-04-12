@@ -17,6 +17,10 @@ void exit() {
   sandboxRequestSender.send(new ExitRequest());
 }
 
+void reload() {
+  sandboxRequestSender.send(new HotReloadRequest());
+}
+
 /* This is not working at the moment. Tracking issue:
 https://github.com/dart-lang/sdk/issues/29332
 

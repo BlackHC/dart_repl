@@ -7,7 +7,8 @@ import 'package:dart_repl_sandbox/message_converter.dart';
 final SandboxRequestQueueConverters = new MessageConverter({
   ImportLibraryRequest: ImportLibraryRequest.fromRawMessage,
   LoadPackageRequest: LoadPackageRequest.fromRawMessage,
-  ExitRequest: ExitRequest.fromRawMessage
+  ExitRequest: ExitRequest.fromRawMessage,
+  HotReloadRequest: HotReloadRequest.fromRawMessage
 });
 
 class ImportLibraryRequest extends Message<ImportLibraryRequest> {
@@ -20,6 +21,11 @@ class ImportLibraryRequest extends Message<ImportLibraryRequest> {
 
   @override
   Object toRawData() => libraryPath;
+}
+
+class HotReloadRequest extends Message<HotReloadRequest> {
+  static HotReloadRequest fromRawMessage(Object simpleFormat) =>
+      new HotReloadRequest();
 }
 
 class LoadPackageRequest extends Message<LoadPackageRequest> {

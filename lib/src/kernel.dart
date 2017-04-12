@@ -85,6 +85,8 @@ Future<Null> runRepl(SandboxIsolate sandboxIsolate) async {
           } else if (sandboxRequest is LoadPackageRequest) {
             await executeLoadPackage(
                 sandboxIsolate, runnableIsolate, sandboxRequest);
+          } else if (sandboxRequest is HotReloadRequest) {
+            await reloadCode(runnableIsolate);
           } else {
             throw new StateError("Unknown sandbox request $sandboxRequest!");
           }
@@ -98,30 +100,6 @@ Future<Null> runRepl(SandboxIsolate sandboxIsolate) async {
     client.close();
     sandboxRequestReceiver.close();
   }
-}
-
-final pubCache = new PubCache();
-
-Future executeLoadPackage(SandboxIsolate sandboxIsolate,
-    VMRunnableIsolate runnableIsolate, LoadPackageRequest request) async {
-  final packageRef = pubCache.getLatestVersion(request.packageName);
-  final libPath = packageRef.resolve().location.path + "/lib/";
-  final newPackageResolver =
-      await addPackage(request.packageConfigUri, request.packageName, libPath);
-  final packageConfigUri = await newPackageResolver.packageConfigUri;
-  final report = await runnableIsolate.reloadSources(
-      force: true, packagesUrl: packageConfigUri);
-  if (!report.status) {
-    print(report.message);
-  }
-}
-
-Future executeImport(
-    SandboxIsolate sandboxIsolate,
-    VMRunnableIsolate runnableIsolate,
-    ImportLibraryRequest importLibraryRequest) async {
-  await linkAndExecuteCell(sandboxIsolate,
-      "export \'${importLibraryRequest.libraryPath}\';", runnableIsolate);
 }
 
 /// Execute input as cellType.
@@ -169,6 +147,30 @@ Future<bool> executeCell(
   return eatNull;
 }
 
+final pubCache = new PubCache();
+
+Future executeLoadPackage(SandboxIsolate sandboxIsolate,
+    VMRunnableIsolate runnableIsolate, LoadPackageRequest request) async {
+  final packageRef = pubCache.getLatestVersion(request.packageName);
+  final libPath = packageRef.resolve().location.path + "/lib/";
+  final newPackageResolver =
+  await addPackage(request.packageConfigUri, request.packageName, libPath);
+  final packageConfigUri = await newPackageResolver.packageConfigUri;
+  final report = await runnableIsolate.reloadSources(
+      force: true, packagesUrl: packageConfigUri);
+  if (!report.status) {
+    print(report.message);
+  }
+}
+
+Future executeImport(
+    SandboxIsolate sandboxIsolate,
+    VMRunnableIsolate runnableIsolate,
+    ImportLibraryRequest importLibraryRequest) async {
+  await linkAndExecuteCell(sandboxIsolate,
+      "export \'${importLibraryRequest.libraryPath}\';", runnableIsolate);
+}
+
 Future linkAndExecuteCell(SandboxIsolate sandboxIsolate, String input,
     VMRunnableIsolate runnableIsolate) async {
   sandboxIsolate.cellChain.addCell(input);
@@ -178,6 +180,13 @@ Future linkAndExecuteCell(SandboxIsolate sandboxIsolate, String input,
     print(report.message);
     // Undo the last cell, so we can try again.
     sandboxIsolate.cellChain.undoCell();
+  }
+}
+
+Future reloadCode(VMRunnableIsolate runnableIsolate) async {
+  final report = await runnableIsolate.reloadSources();
+  if (!report.status) {
+    print(report.message);
   }
 }
 
