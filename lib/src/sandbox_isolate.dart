@@ -36,8 +36,6 @@ Future<SandboxIsolate> bootstrapIsolate(
   final packageConfig = await createSandboxPackageConfig(packageDir);
   final packageConfigUri = await packageConfig.packageConfigUri;
 
-  final sandboxTemplateUri =
-      await resolvePackageFile('package:dart_repl/src/template/sandbox.dart');
   final cellTemplateUri = await resolvePackageFile(
       'package:dart_repl/src/template/cell_template.dart');
   final baseIsolateUri =
@@ -50,14 +48,11 @@ Future<SandboxIsolate> bootstrapIsolate(
   // Copy isolate.dart.
   isolateFile.writeAsStringSync(await readUrl(baseIsolateUri));
 
-  // Copy sandbox.dart and update imports in the
-  // dynamic environment.
+  // The CellChain creates sandbox.dart and manages the cell chain for
+  // top-level declarations.
   final cellTemplate = new DartTemplate(await readUrl(cellTemplateUri));
-  final headTemplate = new DartTemplate(await readUrl(sandboxTemplateUri));
-
-  // Head template is imported by the isolate!
-  final cellChain = new TopLevelCellChain(
-      cellTemplate, headTemplate, 'sandbox.dart', instanceDir.path);
+  final cellChain =
+      new TopLevelCellChain(cellTemplate, 'sandbox.dart', instanceDir.path);
 
   // Create the first cell that imports everything specified on the command
   // line.

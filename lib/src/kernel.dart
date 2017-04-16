@@ -154,7 +154,7 @@ Future executeLoadPackage(SandboxIsolate sandboxIsolate,
   final packageRef = pubCache.getLatestVersion(request.packageName);
   final libPath = packageRef.resolve().location.path + "/lib/";
   final newPackageResolver =
-  await addPackage(request.packageConfigUri, request.packageName, libPath);
+      await addPackage(request.packageConfigUri, request.packageName, libPath);
   final packageConfigUri = await newPackageResolver.packageConfigUri;
   final report = await runnableIsolate.reloadSources(
       force: true, packagesUrl: packageConfigUri);

@@ -8,8 +8,12 @@ class DartTemplate {
 
   DartTemplate(this.content);
 
-  void instantiate(String targetPath, [String source, String libraryHeader]) {
-    final instanceSource = content.replaceAll('/*{SOURCE}*/', source ?? '');
+  void instantiate(String targetPath,
+      {String source, String library, String imports}) {
+    final instanceSource = content
+        .replaceAll('/*{SOURCE}*/', source ?? '')
+        .replaceAll('/*{IMPORTS}*/', imports ?? '')
+        .replaceAll('/*{LIBRARY}*/', library ?? '');
     new File(targetPath).writeAsStringSync(instanceSource);
     //print('wrote $targetPath:\n$instanceSource');
   }
@@ -20,47 +24,50 @@ class DartTemplate {
 /// top-level decls that can shadow each other.
 class TopLevelCellChain {
   final DartTemplate cellTemplate;
-  final DartTemplate headTemplate;
   final String headName;
   final String basePath;
 
   int _currentCellIndex = 0;
 
-  TopLevelCellChain(
-      this.cellTemplate, this.headTemplate, this.headName, this.basePath);
+  TopLevelCellChain(this.cellTemplate, this.headName, this.basePath);
 
   String get currentCellPath => '$basePath/$currentCellName';
   String get currentCellName => 'cell${_currentCellIndex}.dart';
   String get headPath => '$basePath/$headName';
 
   void addCell(String source) {
-    final cellSource = _currentCellIndex > 0
+    // Import and export the previous cell.
+    final imports = _currentCellIndex > 0
         ? '''
-// Import the previous cell and make its symbols available to the next
-// cell.
+// Import the previous cell and export it to make its symbols available to the
+// next cell.
 import '$currentCellName';
 export '$currentCellName';
-
-// __env is always available.
-import 'package:dart_repl_sandbox/cell_environment.dart' as __env;
-// Provide builtin commands like `exit` or `import`.
-import 'package:dart_repl_sandbox/builtin_commands/api.dart' as __api;
-
-$source
 '''
-        : source;
+        : '';
 
     _currentCellIndex++;
-    cellTemplate.instantiate(currentCellPath, cellSource);
-    headTemplate.instantiate(headPath, 'import \'$currentCellName\';');
+    cellTemplate.instantiate(currentCellPath, imports: imports, source: source);
+
+    // Update the sandbox.
+    refreshSandboxLibrary();
+  }
+
+  void refreshSandboxLibrary() {
+    var libraryStatement = '''
+/// This library name is needed to find the library using reflection.
+library sandbox;
+''';
+
+    cellTemplate.instantiate(headPath,
+        imports: _currentCellIndex > 0 ? 'import \'$currentCellName\';' : '',
+        library: libraryStatement);
   }
 
   void undoCell() {
     if (_currentCellIndex > 0) {
       _currentCellIndex--;
-      headTemplate.instantiate(headPath, 'import \'$currentCellName\';');
-    } else {
-      headTemplate.instantiate(headPath);
     }
+    refreshSandboxLibrary();
   }
 }
