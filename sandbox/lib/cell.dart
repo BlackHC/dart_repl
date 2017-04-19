@@ -1,20 +1,20 @@
 // Copyright (c) 2016, Andreas 'blackhc' Kirsch. All rights reserved. Use of
 // this source code is governed by a BSD-style license that can be found in the
 // LICENSE file.
+
 import 'dart:collection';
 
-import 'scope.dart';
-
+// TODO: store the current cell name, too, to make it possible to reimport it.
+// (In order to access the namespace...)
 class Cell {
-  final Scope scope;
   final String input;
   final dynamic output;
 
-  Cell(this.scope, this.input, this.output);
+  Cell(this.input, this.output);
 
   @override
   String toString() =>
-      {'scope': scope, 'input': input, 'output': output}.toString();
+      <String, dynamic>{'input': input, 'output': output}.toString();
 }
 
 typedef T Accessor<T>(Cell cell);

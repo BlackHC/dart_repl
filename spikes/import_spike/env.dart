@@ -1,1 +1,1 @@
-var result;
+Object result;

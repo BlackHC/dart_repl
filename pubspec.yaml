@@ -9,9 +9,16 @@ environment:
 
 dependencies:
   args: ">=0.13.7 <0.14.0"
-  vm_service_client: ">=0.2.2+4 <0.3.0"
+  vm_service_client:
+    git:
+      url: git://github.com/BlackHC/vm_service_client.git
+      ref: reload_sources_poc
   analyzer: ">=0.29.2 <0.30.0"
   package_resolver: ">=1.0.2 <2.0.0"
+  pub_cache:
 
 dev_dependencies:
   test: '>=0.12.0 <0.13.0'
+  dart_repl_sandbox:
+    path:
+      sandbox/

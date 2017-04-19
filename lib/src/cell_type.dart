@@ -4,13 +4,18 @@
 import 'dart:io';
 
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:analyzer/dart/ast/visitor.dart';
 import 'package:analyzer/dart/ast/token.dart';
 import 'package:analyzer/error/listener.dart';
 import 'package:analyzer/src/dart/scanner/reader.dart';
 import 'package:analyzer/src/dart/scanner/scanner.dart';
 import 'package:analyzer/src/generated/parser.dart';
 
-bool _tryParse(String code, Function parse) {
+enum CellType { UNKNOWN, TOP_LEVEL, STATEMENTS, AWAIT_EXPRESSION, EXPRESSION }
+
+typedef T ParserClosure<T>(Parser parser, Token token);
+
+bool _tryParse<T>(String code, ParserClosure<T> parse) {
   final reader = new CharSequenceReader(code);
   final errorListener = new BooleanErrorListener();
   final scanner = new Scanner(null, reader, errorListener);
@@ -33,3 +38,19 @@ bool isStatements(String code) => _tryParse(code, (Parser parser, Token token) {
       }
       return statements.last;
     });
+
+bool isTopLevel(String code) => _tryParse(
+    code, (Parser parser, Token token) => parser.parseCompilationUnit(token));
+
+CellType determineCellType(String code) {
+  if (isTopLevel(code)) {
+    return CellType.TOP_LEVEL;
+  } else if (isStatements(code)) {
+    return CellType.STATEMENTS;
+  } else if (isExpression(code)) {
+    return CellType.EXPRESSION;
+  } else if (isExpression("(() async => $code)()")) {
+    return CellType.AWAIT_EXPRESSION;
+  }
+  return CellType.UNKNOWN;
+}

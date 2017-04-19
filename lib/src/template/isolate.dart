@@ -5,26 +5,39 @@
 import 'dart:async';
 import 'dart:isolate';
 
+// TODO: recreate a dart_repl_sandbox package to fix these warnings?
+import 'package:dart_repl_sandbox/builtin_commands/api.dart' as builtins;
+import 'package:dart_repl_sandbox/builtin_commands/messages.dart';
 import 'package:dart_repl_sandbox/cell.dart';
-import 'package:dart_repl_sandbox/scope.dart' as scope;
 import 'package:dart_repl_sandbox/cell_environment.dart' as cell_environment;
+import 'package:dart_repl_sandbox/data_queue.dart';
 import 'package:dart_repl_sandbox/isolate_messages.dart';
 
-import 'dynamic_environment.dart';
+// Include the head of the cell chain. This is important for reload sources to
+// work.
+// The kernel code uses reflection to find this library.
+import 'package:dart_repl_sandbox/message_channel.dart';
 
-// Scope from dynamic_environment is lexically bound to imports in that library.
-Scope isolateScope;
+// This is needed to load all the symbols and make them available to the
+// environment at runtime.
+import 'sandbox.dart';
 
 Future main(List<String> args, SendPort sendPort) async {
   final receivePort = new ReceivePort();
   sendPort.send(receivePort.sendPort);
+
   // Communications channel are now established.
+  final dataQueue = new DataQueue();
+  receivePort.listen((Object data) => dataQueue.add(data));
 
-  // Create the main scope.
-  isolateScope = new Scope();
+  // TODO: rename fromPorts
+  final channel = new MessageChannel.fromPorts(
+      dataQueue, CellCommandConverters, sendPort, CellReplyConverters);
 
-  receivePort.listen((Object message) async {
-    if (message == COMPLETE_RESULT) {
+  do {
+    final message = await channel.receive();
+    //print(message?.toRawMessage());
+    if (message is CompleteResult) {
       if (cell_environment.result__ is Future) {
         // TODO: this should be signaled using a response message!
         print('(Awaiting result...)');
@@ -38,20 +51,23 @@ Future main(List<String> args, SendPort sendPort) async {
       }
 
       if (cell_environment.result__ != null) {
-        sendPort.send('${cell_environment.result__}');
+        channel.send(new CellResult('${cell_environment.result__}'));
       } else {
-        sendPort.send(null);
+        channel.send(new CellResult(null));
       }
-    } else if (message == RESET_RESULT) {
+    } else if (message is ResetResult) {
       cell_environment.result__ = null;
-      sendPort.send(null);
-    } else if (message is Map && message['type'] == SAVE_CELL) {
-      final input = message['input'] as String;
-      cell_environment.Cell.add(new Cell(new scope.Scope.clone(isolateScope),
-          input, cell_environment.result__));
-      sendPort.send(null);
+      channel.send(null);
+    } else if (message is SaveCell) {
+      cell_environment.Cell
+          .add(new Cell(message.input, cell_environment.result__));
+      channel.send(null);
+    } else if (message is RegisterRequestPort) {
+      builtins.sandboxRequestSender =
+          new MessageSender(message.sendPort, SandboxRequestQueueConverters);
+      channel.send(null);
     } else {
-      throw 'Unknown message $message!';
+      throw new StateError('Unknown message $message!');
     }
-  });
+  } while (true);
 }
