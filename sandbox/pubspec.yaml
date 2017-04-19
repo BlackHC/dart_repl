@@ -1,9 +1,8 @@
 name: dart_repl_sandbox
 description: Internal sandbox package that is used for interactions between the sandbox and kernel.
-version: 1.0.0
+version: 0.11.1
 author: Andreas 'blackhc' Kirsch <blackhc@gmail.com>
 homepage: https://blog.blackhc.net
-publish_to: none
 
 environment:
   sdk: '>=1.0.0 <2.0.0'
