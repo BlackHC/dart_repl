@@ -50,7 +50,17 @@ Future<Null> runRepl(SandboxIsolate sandboxIsolate) async {
     while (true) {
       stdout.write('>>> ');
 
-      final input = stdin.readLineSync();
+      var input;
+      try {
+        input = stdin.readLineSync();
+      } on StdinException catch (e) {
+        input = null;
+      }
+
+      if (input == null) {
+        exit(0);
+      }
+
       if (input.isEmpty) {
         continue;
       }
